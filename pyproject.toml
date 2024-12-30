@@ -10,4 +10,6 @@ dependencies = [
     "numpy>=2.2.0",
     "pandas>=2.2.3",
     "seaborn>=0.13.2",
+    "statsmodels>=0.14.4",
+    "sympy>=1.13.3",
 ]

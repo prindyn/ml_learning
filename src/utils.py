@@ -78,7 +78,7 @@ def dist_box(dataset, column):
         plt.figure(figsize=(16, 6))
 
         plt.subplot(1, 2, 1)
-        sns.distplot(dataset[column], color='purple')
+        sns.histplot(dataset[column], color='purple', kde=True)
         pltname = 'Графік розподілу для ' + column
         plt.ticklabel_format(style='plain', axis='x')
         plt.title(pltname)
