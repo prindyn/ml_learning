@@ -1,6 +1,7 @@
 import warnings
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 
 def age_cat(years):
@@ -257,3 +258,21 @@ def bi_countplot_target(df0, df1, column, hue_column):
         ax.bar_label(container)
 
     plt.show()
+
+def estimate_charges(age, w, b):
+    return w * age + b
+
+def try_parameters(df, w, b):
+    ages = df.age
+    target = df.charges
+
+    estimated_charges = estimate_charges(ages, w, b)
+
+    plt.plot(ages, estimated_charges, 'r', alpha=0.9)
+    plt.scatter(ages, target, s=8,alpha=0.8)
+    plt.xlabel('Age')
+    plt.ylabel('Charges')
+    plt.legend(['Estimate', 'Actual'])
+
+def root_mean_sqrt_error(actual_data, pred_data):
+    return np.sqrt(np.mean((actual_data - pred_data) ** 2))
