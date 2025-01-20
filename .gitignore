@@ -2,4 +2,6 @@
 .venv
 *.zip
 *.csv
+*.parquet
+*.joblib
 __pycache__
