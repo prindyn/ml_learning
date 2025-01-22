@@ -2,6 +2,7 @@ import warnings
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import pandas as pd
 
 
 def age_cat(years):
@@ -276,3 +277,12 @@ def try_parameters(df, w, b):
 
 def root_mean_sqrt_error(actual_data, pred_data):
     return np.sqrt(np.mean((actual_data - pred_data) ** 2))
+
+def gen_submission_sample(model_pipeline):
+    test_raw_df = pd.read_csv("bank-customer-churn-prediction-dlu-course-c-2/test.csv")
+    sample_raw_df = pd.read_csv("bank-customer-churn-prediction-dlu-course-c-2/sample_submission.csv")
+    test_raw_df['Exited'] = model_pipeline.predict_proba(test_raw_df)[:, 1]
+    sample_raw_df = sample_raw_df.merge(test_raw_df[['id', 'Exited']], on='id', how='left')
+    sample_raw_df['Exited'] = sample_raw_df['Exited_y']
+    sample_raw_df.drop(columns=['Exited_y', 'Exited_x'], inplace=True)
+    sample_raw_df.to_csv("bank-customer-churn-prediction-dlu-course-c-2/submission_log_reg.csv", index=False)
