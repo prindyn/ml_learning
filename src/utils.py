@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
+from sklearn import metrics
 
 
 def age_cat(years):
@@ -260,8 +261,10 @@ def bi_countplot_target(df0, df1, column, hue_column):
 
     plt.show()
 
+
 def estimate_charges(age, w, b):
     return w * age + b
+
 
 def try_parameters(df, w, b):
     ages = df.age
@@ -270,19 +273,77 @@ def try_parameters(df, w, b):
     estimated_charges = estimate_charges(ages, w, b)
 
     plt.plot(ages, estimated_charges, 'r', alpha=0.9)
-    plt.scatter(ages, target, s=8,alpha=0.8)
+    plt.scatter(ages, target, s=8, alpha=0.8)
     plt.xlabel('Age')
     plt.ylabel('Charges')
     plt.legend(['Estimate', 'Actual'])
 
+
 def root_mean_sqrt_error(actual_data, pred_data):
     return np.sqrt(np.mean((actual_data - pred_data) ** 2))
 
+
 def gen_submission_sample(model_pipeline):
-    test_raw_df = pd.read_csv("bank-customer-churn-prediction-dlu-course-c-2/test.csv")
-    sample_raw_df = pd.read_csv("bank-customer-churn-prediction-dlu-course-c-2/sample_submission.csv")
+    test_raw_df = pd.read_csv(
+        "bank-customer-churn-prediction-dlu-course-c-2/test.csv")
+    sample_raw_df = pd.read_csv(
+        "bank-customer-churn-prediction-dlu-course-c-2/sample_submission.csv")
     test_raw_df['Exited'] = model_pipeline.predict_proba(test_raw_df)[:, 1]
-    sample_raw_df = sample_raw_df.merge(test_raw_df[['id', 'Exited']], on='id', how='left')
+    sample_raw_df = sample_raw_df.merge(
+        test_raw_df[['id', 'Exited']], on='id', how='left')
     sample_raw_df['Exited'] = sample_raw_df['Exited_y']
     sample_raw_df.drop(columns=['Exited_y', 'Exited_x'], inplace=True)
-    sample_raw_df.to_csv("bank-customer-churn-prediction-dlu-course-c-2/submission_log_reg.csv", index=False)
+    sample_raw_df.to_csv(
+        "bank-customer-churn-prediction-dlu-course-c-2/submission_log_reg.csv", index=False)
+
+# Function for plotting dataset
+def plot_data(X, y, ax, title):
+    ax.scatter(X[:, 0], X[:, 1], c=y, alpha=0.5,
+               s=30, edgecolor=(0, 0, 0, 0.5))
+    ax.set_ylabel('Principle Component 1')
+    ax.set_xlabel('Principle Component 2')
+    if title is not None:
+        ax.set_title(title)
+
+
+def plot_decision_boundaries(X, y, clf, ax, title):
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.01),
+                         np.arange(y_min, y_max, 0.01))
+    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    ax.contourf(xx, yy, Z, alpha=0.3)
+    scatter = ax.scatter(X[:, 0], X[:, 1], c=y,
+                         edgecolor='k', marker='o', s=20)
+    ax.set_title(title)
+    return scatter
+
+
+# Helper function for plotting ROC
+def plot_roc(clf, ax, X_train, y_train, X_test, y_test, title):
+    clf.fit(X_train, y_train)
+    y_test_pred = clf.predict_proba(X_test)[:, 1]
+    fpr, tpr, thresh = metrics.roc_curve(y_test, y_test_pred)
+    auc = metrics.roc_auc_score(y_test, y_test_pred)
+    ax.plot(fpr, tpr, label=f"{title} AUC={auc:.3f}")
+
+    ax.set_title('ROC Curve')
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+    ax.legend(loc=0)
+
+
+def predict_and_plot(model_pipeline, inputs, targets, name=''):
+    preds = model_pipeline.predict(inputs)
+    probs = model_pipeline.predict_proba(inputs)[:, 1]
+    roc_auc = metrics.roc_auc_score(targets, probs)
+    print(f"Area under ROC score on {name} dataset: {roc_auc * 100:.2f}%")
+    cf_matrix = metrics.confusion_matrix(targets, preds)
+    plt.figure(figsize=(8, 8))
+    sns.heatmap(cf_matrix, annot=True, cmap="Blues", fmt="d")
+    plt.xlabel("Prediction")
+    plt.ylabel("Target")
+    plt.title('{} Confusion Matrix'.format(name))
+    plt.show()
+    return preds.round(2)
