@@ -105,7 +105,9 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[s
         Dict[str, object]: Processed data including train/test splits, scaler, and encoder.
     """
     df = drop_columns(raw_df.copy(), ["Surname"])
-    X, y = split_features_target(df, input_cols=df.columns[2:-1].tolist(), target_col="Exited")
+    input_cols = df.columns[2:-1].tolist()
+    target_col = "Exited"
+    X, y = split_features_target(df, input_cols, target_col)
     X_train, X_test, y_train, y_test = split_train_test(X, y)
     scaler = MinMaxScaler() if scaler_numeric else None
     X_train, X_test, scaler = scale_numeric_features(X_train, X_test, scaler)
@@ -116,6 +118,8 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[s
         "train_y": y_train,
         "test_X": X_test,
         "test_y": y_test,
+        "input_cols": input_cols,
+        "target_col": target_col,
         "scaler": scaler,
         "encoder": encoder
     }
@@ -133,8 +137,7 @@ def preprocess_new_data(new_df: pd.DataFrame, encoder: OneHotEncoder, scaler: Mi
     Returns:
         pd.DataFrame: Processed new data.
     """
-    new_df = drop_columns(new_df.copy(), ["Surname"])
-    X, _ = split_features_target(new_df, new_df.columns[2:-1].tolist(), "Exited")
+    X = drop_columns(new_df.copy(), ["id", "Surname", "CustomerId"])
 
     numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
     if scaler:
