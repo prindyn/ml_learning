@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler, LabelEncoder
 from typing import Tuple, Dict, Optional
 
 
@@ -104,9 +104,9 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[s
     Returns:
         Dict[str, object]: Processed data including train/test splits, scaler, and encoder.
     """
-    df = drop_columns(raw_df.copy(), ["Surname"])
-    input_cols = df.columns[2:-1].tolist()
+    df = drop_columns(raw_df.copy(), ["id", "CustomerId"])
     target_col = "Exited"
+    input_cols = df.drop(columns=target_col).columns.tolist()
     X, y = split_features_target(df, input_cols, target_col)
     X_train, X_test, y_train, y_test = split_train_test(X, y)
     scaler = MinMaxScaler() if scaler_numeric else None
@@ -121,7 +121,7 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[s
         "input_cols": input_cols,
         "target_col": target_col,
         "scaler": scaler,
-        "encoder": encoder
+        "encoder": encoder,
     }
 
 
@@ -137,7 +137,7 @@ def preprocess_new_data(new_df: pd.DataFrame, encoder: OneHotEncoder, scaler: Mi
     Returns:
         pd.DataFrame: Processed new data.
     """
-    X = drop_columns(new_df.copy(), ["id", "Surname", "CustomerId"])
+    X = drop_columns(new_df.copy(), ["id", "CustomerId"])
 
     numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
     if scaler:
