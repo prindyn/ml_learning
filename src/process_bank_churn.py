@@ -1,7 +1,6 @@
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler, LabelEncoder
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from typing import Tuple, Dict, Optional
 
 
@@ -93,7 +92,29 @@ def encode_categorical_features(X_train: pd.DataFrame, X_test: pd.DataFrame) -> 
     return X_train, X_test, encoder
 
 
-def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[str, object]:
+def with_surname_features(raw_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Generate new features based on the raw data frame, specifically for the 'Surname' column and related attributes.
+
+    This function adds the following features to the DataFrame:
+    1. 'AgeAtFirstInteraction': Calculated as the difference between 'Age' and 'Tenure'.
+    2. 'SurnameLength': The length of the surname (number of characters).
+    3. 'SurnameSymbol': A combination of the first two characters of the surname.
+
+    Args:
+        raw_df (pd.DataFrame): The input DataFrame containing the customer data, including 'Age', 'Tenure', and 'Surname'.
+
+    Returns:
+        pd.DataFrame: The modified DataFrame with the new features added.
+    """
+    raw_df['AgeAtFirstInteraction'] = raw_df['Age'] - raw_df['Tenure']
+    raw_df['SurnameLength'] = raw_df['Surname'].apply(len)
+    raw_df['Surname'] = raw_df['Surname'].apply(lambda x: x[0] + x[1] if len(x) > 1 else x[0])
+
+    return raw_df
+
+
+def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = False) -> Dict[str, object]:
     """
     Preprocesses the raw dataset for training and testing.
 
@@ -104,7 +125,8 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = True) -> Dict[s
     Returns:
         Dict[str, object]: Processed data including train/test splits, scaler, and encoder.
     """
-    df = drop_columns(raw_df.copy(), ["id", "CustomerId"])
+    df = with_surname_features(drop_columns(
+        raw_df.copy(), ["id", "CustomerId"]))
     target_col = "Exited"
     input_cols = df.drop(columns=target_col).columns.tolist()
     X, y = split_features_target(df, input_cols, target_col)
@@ -137,7 +159,8 @@ def preprocess_new_data(new_df: pd.DataFrame, encoder: OneHotEncoder, scaler: Mi
     Returns:
         pd.DataFrame: Processed new data.
     """
-    X = drop_columns(new_df.copy(), ["id", "CustomerId"])
+    X = with_surname_features(drop_columns(
+        new_df.copy(), ["id", "CustomerId"]))
 
     numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
     if scaler:
