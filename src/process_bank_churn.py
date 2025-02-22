@@ -31,7 +31,7 @@ def split_features_target(df: pd.DataFrame, input_cols: list, target_col: str) -
     return df[input_cols].copy(), df[target_col].copy()
 
 
-def split_train_test(X: pd.DataFrame, y: pd.Series, test_size: float = 0.25, random_state: int = 42) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+def split_train_test(X: pd.DataFrame, y: pd.Series, test_size: float = 0.2, random_state: int = 42) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """
     Splits the dataset into training and testing sets.
 
@@ -92,7 +92,7 @@ def encode_categorical_features(X_train: pd.DataFrame, X_test: pd.DataFrame) -> 
     return X_train, X_test, encoder
 
 
-def with_surname_features(raw_df: pd.DataFrame) -> pd.DataFrame:
+def with_feature_proc(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
     Generate new features based on the raw data frame, specifically for the 'Surname' column and related attributes.
 
@@ -107,14 +107,15 @@ def with_surname_features(raw_df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The modified DataFrame with the new features added.
     """
-    raw_df['AgeAtFirstInteraction'] = raw_df['Age'] - raw_df['Tenure']
-    raw_df['SurnameLength'] = raw_df['Surname'].apply(len)
-    raw_df['Surname'] = raw_df['Surname'].apply(lambda x: x[0] + x[1] if len(x) > 1 else x[0])
+    # raw_df['AgeAtFirstInteraction'] = raw_df['Age'] - raw_df['Tenure']
+    # raw_df['SurnameLength'] = raw_df['Surname'].apply(len)
+    # raw_df['Surname'] = raw_df['Surname'].apply(lambda x: x[0] + x[1] if len(x) > 1 else x[0])
+    raw_df.drop(columns=['Surname'], inplace=True)
 
     return raw_df
 
 
-def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = False) -> Dict[str, object]:
+def preprocess_data(raw_df: pd.DataFrame, target_col: str, drop_cols: list = [], scaler_numeric: bool = False) -> Dict[str, object]:
     """
     Preprocesses the raw dataset for training and testing.
 
@@ -125,9 +126,7 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = False) -> Dict[
     Returns:
         Dict[str, object]: Processed data including train/test splits, scaler, and encoder.
     """
-    df = with_surname_features(drop_columns(
-        raw_df.copy(), ["id", "CustomerId"]))
-    target_col = "Exited"
+    df = with_feature_proc(drop_columns(raw_df.copy(), drop_cols))
     input_cols = df.drop(columns=target_col).columns.tolist()
     X, y = split_features_target(df, input_cols, target_col)
     X_train, X_test, y_train, y_test = split_train_test(X, y)
@@ -147,7 +146,7 @@ def preprocess_data(raw_df: pd.DataFrame, scaler_numeric: bool = False) -> Dict[
     }
 
 
-def preprocess_new_data(new_df: pd.DataFrame, encoder: OneHotEncoder, scaler: MinMaxScaler = None) -> pd.DataFrame:
+def preprocess_new_data(new_df: pd.DataFrame, encoder: OneHotEncoder, scaler: MinMaxScaler = None, drop_cols: list = []) -> pd.DataFrame:
     """
     Preprocesses new data using the trained scaler and encoder.
 
@@ -159,8 +158,7 @@ def preprocess_new_data(new_df: pd.DataFrame, encoder: OneHotEncoder, scaler: Mi
     Returns:
         pd.DataFrame: Processed new data.
     """
-    X = with_surname_features(drop_columns(
-        new_df.copy(), ["id", "CustomerId"]))
+    X = with_feature_proc(drop_columns(new_df.copy(), drop_cols))
 
     numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
     if scaler:
